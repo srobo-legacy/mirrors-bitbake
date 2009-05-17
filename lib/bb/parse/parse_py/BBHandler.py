@@ -56,6 +56,20 @@ IN_PYTHON_EOF = -9999999999999
 
 __parsed_methods__ = methodpool.get_parsed_dict()
 
+# parsing routines, to be moved into AST classes
+def handleMethod(func_name, body, d):
+    data.setVar(func_name, '\n'.join(body), d)
+    data.setVarFlag(func_name, "func", 1, d)
+    if func_name == "__anonymous":
+        anonqueue = bb.data.getVar("__anonqueue", d) or []
+        anonitem = {}
+        anonitem["content"] = bb.data.getVar("__anonymous", d)
+        anonitem["flags"] = bb.data.getVarFlags("__anonymous", d)
+        anonqueue.append(anonitem)
+        bb.data.setVar("__anonqueue", anonqueue, d)
+        bb.data.delVarFlags("__anonymous", d)
+        bb.data.delVar("__anonymous", d)
+
 def supports(fn, d):
     return fn[-3:] == ".bb" or fn[-8:] == ".bbclass" or fn[-4:] == ".inc"
 
@@ -189,17 +203,7 @@ def feeder(lineno, s, fn, root, d):
     if __infunc__:
         if s == '}':
             __body__.append('')
-            data.setVar(__infunc__, '\n'.join(__body__), d)
-            data.setVarFlag(__infunc__, "func", 1, d)
-            if __infunc__ == "__anonymous":
-                anonqueue = bb.data.getVar("__anonqueue", d) or []
-                anonitem = {}
-                anonitem["content"] = bb.data.getVar("__anonymous", d)
-                anonitem["flags"] = bb.data.getVarFlags("__anonymous", d)
-                anonqueue.append(anonitem)
-                bb.data.setVar("__anonqueue", anonqueue, d)
-                bb.data.delVarFlags("__anonymous", d)
-                bb.data.delVar("__anonymous", d)
+            handleMethod(__infunc__, __body__, d)
             __infunc__ = ""
             __body__ = []
         else:
