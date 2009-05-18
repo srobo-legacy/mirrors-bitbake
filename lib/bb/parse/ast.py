@@ -26,6 +26,12 @@ import bb, re
 __word__ = re.compile(r"\S+")
 __parsed_methods__ = bb.methodpool.get_parsed_dict()
 
+def getFunc(groupd, key, data):
+    if 'flag' in groupd and groupd['flag'] != None:
+        return bb.data.getVarFlag(key, groupd['flag'], data)
+    else:
+        return bb.data.getVar(key, data)
+
 class StatementGroup:
     def __init__(self):
         self.statements = []
@@ -74,13 +80,19 @@ class DataNode:
     def __init__(self, groupd):
         self.groupd = groupd
 
+    def getFunc(self, key, data):
+        if 'flag' in self.groupd and self.groupd['flag'] != None:
+            return bb.data.getVarFlag(key, self.groupd['flag'], data)
+        else:
+            return bb.data.getVar(key, data)
+
     def eval(self, data):
         groupd = self.groupd
         key = groupd["var"]
         if "exp" in groupd and groupd["exp"] != None:
             bb.data.setVarFlag(key, "export", 1, data)
         if "ques" in groupd and groupd["ques"] != None:
-            val = getFunc(groupd, key, data)
+            val = self.getFunc(key, data)
             if val == None:
                 val = groupd["value"]
         elif "colon" in groupd and groupd["colon"] != None:
@@ -88,13 +100,13 @@ class DataNode:
             bb.data.update_data(e)
             val = bb.data.expand(groupd["value"], e)
         elif "append" in groupd and groupd["append"] != None:
-            val = "%s %s" % ((getFunc(groupd, key, data) or ""), groupd["value"])
+            val = "%s %s" % ((self.getFunc(key, data) or ""), groupd["value"])
         elif "prepend" in groupd and groupd["prepend"] != None:
-            val = "%s %s" % (groupd["value"], (getFunc(groupd, key, data) or ""))
+            val = "%s %s" % (groupd["value"], (self.getFunc(key, data) or ""))
         elif "postdot" in groupd and groupd["postdot"] != None:
-            val = "%s%s" % ((getFunc(groupd, key, data) or ""), groupd["value"])
+            val = "%s%s" % ((self.getFunc(key, data) or ""), groupd["value"])
         elif "predot" in groupd and groupd["predot"] != None:
-            val = "%s%s" % (groupd["value"], (getFunc(groupd, key, data) or ""))
+            val = "%s%s" % (groupd["value"], (self.getFunc(key, data) or ""))
         else:
             val = groupd["value"]
         if 'flag' in groupd and groupd['flag'] != None:
@@ -104,7 +116,6 @@ class DataNode:
             bb.data.setVar(key, val, data)
 
         
-
 def handleInclude(statements, m, fn, lineno, data, force):
     # AST handling
     statements.append(IncludeNode(m.group(1), fn, lineno))
@@ -149,12 +160,6 @@ def handleData(statements, groupd, data):
         bb.data.setVarFlag(key, groupd['flag'], val, data)
     else:
         bb.data.setVar(key, val, data)
-
-def getFunc(groupd, key, data):
-    if 'flag' in groupd and groupd['flag'] != None:
-        return bb.data.getVarFlag(key, groupd['flag'], data)
-    else:
-        return bb.data.getVar(key, data)
 
 def handleMethod(statements, func_name, body, d):
     bb.data.setVar(func_name, '\n'.join(body), d)
