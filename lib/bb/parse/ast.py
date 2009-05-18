@@ -26,15 +26,25 @@ import bb, re
 __word__ = re.compile(r"\S+")
 __parsed_methods__ = bb.methodpool.get_parsed_dict()
 
-def handleInclude(m, fn, lineno, data, force):
+class StatementGroup:
+    def __init__(self):
+        self.statements = []
+
+    def eval(self, data):
+        """
+        Apply each statement on the data... in order
+        """
+        map(lambda x: x.eval(data), self.statements)
+
+def handleInclude(statements, m, fn, lineno, data, force):
     s = bb.data.expand(m.group(1), data)
     bb.msg.debug(3, bb.msg.domain.Parsing, "CONF %s:%d: including %s" % (fn, lineno, s))
-    bb.parse.ConfHandler.include(fn, s, data, False)
+    bb.parse.ConfHandler.include(statements, fn, s, data, False)
 
-def handleExport(m, data):
+def handleExport(statements, m, data):
     bb.data.setVarFlag(m.group(1), "export", 1, data)
 
-def handleData(groupd, data):
+def handleData(statements, groupd, data):
     key = groupd["var"]
     if "exp" in groupd and groupd["exp"] != None:
         bb.data.setVarFlag(key, "export", 1, data)
@@ -68,7 +78,7 @@ def getFunc(groupd, key, data):
     else:
         return bb.data.getVar(key, data)
 
-def handleMethod(func_name, body, d):
+def handleMethod(statements, func_name, body, d):
     bb.data.setVar(func_name, '\n'.join(body), d)
     bb.data.setVarFlag(func_name, "func", 1, d)
     if func_name == "__anonymous":
@@ -81,7 +91,7 @@ def handleMethod(func_name, body, d):
         bb.data.delVarFlags("__anonymous", d)
         bb.data.delVar("__anonymous", d)
 
-def handlePythonMethod(root, body, fn):
+def handlePythonMethod(statements, root, body, fn):
     # Note we will add root to parsedmethods after having parse
     # 'this' file. This means we will not parse methods from
     # bb classes twice
@@ -89,7 +99,7 @@ def handlePythonMethod(root, body, fn):
         text = '\n'.join(body)
         bb.methodpool.insert_method( root, text, fn )
 
-def handleMethodFlags(key, m, d):
+def handleMethodFlags(statements, key, m, d):
     if bb.data.getVar(key, d):
         # clean up old version of this piece of metadata, as its
         # flags could cause problems
@@ -104,7 +114,7 @@ def handleMethodFlags(key, m, d):
     else:
         bb.data.delVarFlag(key, "fakeroot", d)
 
-def handleExportFuncs(m, classes, d):
+def handleExportFuncs(statements, m, classes, d):
     fns = m.group(1)
     n = __word__.findall(fns)
     for f in n:
@@ -140,7 +150,7 @@ def handleExportFuncs(m, classes, d):
                 bb.data.setVar(var, "\t" + calledvar + "\n", d)
             bb.data.setVarFlag(var, 'export_func', '1', d)
 
-def handleAddTask(m, d):
+def handleAddTask(statements, m, d):
     func = m.group("func")
     before = m.group("before")
     after = m.group("after")
@@ -169,7 +179,7 @@ def handleAddTask(m, d):
             if var not in existing:
                 bb.data.setVarFlag(entry, "deps", [var] + existing, d)
 
-def handleBBHandlers(m, d):
+def handleBBHandlers(statements, m, d):
     fns = m.group(1)
     hs = __word__.findall(fns)
     bbhands = bb.data.getVar('__BBHANDLERS', d) or []
@@ -178,8 +188,8 @@ def handleBBHandlers(m, d):
         bb.data.setVarFlag(h, "handler", 1, d)
     bb.data.setVar('__BBHANDLERS', bbhands, d)
 
-def handleInherit(m, d):
+def handleInherit(statements, m, d):
     files = m.group(1)
     n = __word__.findall(files)
-    bb.parse.BBHandler.inherit(n, d)
+    bb.parse.BBHandler.inherit(statements, n, d)
 
