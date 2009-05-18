@@ -72,40 +72,6 @@ def inherit(statements, files, d):
             include(statements, fn, file, d, "inherit")
             __inherit_cache = data.getVar('__inherit_cache', d) or []
 
-
-def finalise(fn, d):
-    data.expandKeys(d)
-    data.update_data(d)
-    anonqueue = data.getVar("__anonqueue", d, 1) or []
-    body = [x['content'] for x in anonqueue]
-    flag = { 'python' : 1, 'func' : 1 }
-    data.setVar("__anonfunc", "\n".join(body), d)
-    data.setVarFlags("__anonfunc", flag, d)
-    from bb import build
-    try:
-        t = data.getVar('T', d)
-        data.setVar('T', '${TMPDIR}/', d)
-        build.exec_func("__anonfunc", d)
-        data.delVar('T', d)
-        if t:
-            data.setVar('T', t, d)
-    except Exception, e:
-        bb.msg.debug(1, bb.msg.domain.Parsing, "Exception when executing anonymous function: %s" % e)
-        raise
-    data.delVar("__anonqueue", d)
-    data.delVar("__anonfunc", d)
-    data.update_data(d)
-
-    all_handlers = {} 
-    for var in data.getVar('__BBHANDLERS', d) or []:
-        # try to add the handler
-        handler = data.getVar(var,d)
-        bb.event.register(var, handler)
-
-    tasklist = data.getVar('__BBTASKS', d) or []
-    bb.build.add_tasks(tasklist, d)
-
-
 def handle(fn, d, include, statements):
     global __func_start_regexp__, __inherit_regexp__, __export_func_regexp__, __addtask_regexp__, __addhandler_regexp__, __infunc__, __body__, __residue__
     __body__ = []
@@ -172,7 +138,7 @@ def handle(fn, d, include, statements):
                     darray[cls] = based
                 return darray
             else:
-                finalise(fn, d)
+                ast.finalise(fn, d)
     if oldfile:
         bb.data.setVar("FILE", oldfile, d)
 
