@@ -112,6 +112,38 @@ class DataNode:
         else:
             bb.data.setVar(key, val, data)
 
+class MethodNode:
+    def __init__(self, func_name, body):
+        self.func_name = func_name
+        self.body = body
+
+    def eval(self, data):
+        bb.data.setVar(self.func_name, '\n'.join(self.body), data)
+        bb.data.setVarFlag(self.func_name, "func", 1, data)
+        if self.func_name == "__anonymous":
+            anonqueue = bb.data.getVar("__anonqueue", data) or []
+            anonitem = {}
+            anonitem["content"] = bb.data.getVar("__anonymous", data)
+            anonitem["flags"] = bb.data.getVarFlags("__anonymous", data)
+            anonqueue.append(anonitem)
+            bb.data.setVar("__anonqueue", anonqueue, data)
+            bb.data.delVarFlags("__anonymous", data)
+            bb.data.delVar("__anonymous", data)
+
+class PythonMethodNode:
+    def __init__(self, root, body, fn):
+        self.root = root
+        self.body = body
+        self.fn = fn
+
+    def eval(self, data):
+        # Note we will add root to parsedmethods after having parse
+        # 'this' file. This means we will not parse methods from
+        # bb classes twice
+        if not self.root  in __parsed_methods__:
+            text = '\n'.join(self.body)
+            bb.methodpool.insert_method(self.root, text, self.fn)
+        
         
 def handleInclude(statements, m, fn, lineno, data, force):
     # AST handling
@@ -129,25 +161,14 @@ def handleData(statements, groupd, data):
     statements[-1].eval(data)
 
 def handleMethod(statements, func_name, body, d):
-    bb.data.setVar(func_name, '\n'.join(body), d)
-    bb.data.setVarFlag(func_name, "func", 1, d)
-    if func_name == "__anonymous":
-        anonqueue = bb.data.getVar("__anonqueue", d) or []
-        anonitem = {}
-        anonitem["content"] = bb.data.getVar("__anonymous", d)
-        anonitem["flags"] = bb.data.getVarFlags("__anonymous", d)
-        anonqueue.append(anonitem)
-        bb.data.setVar("__anonqueue", anonqueue, d)
-        bb.data.delVarFlags("__anonymous", d)
-        bb.data.delVar("__anonymous", d)
+    # AST handling
+    statements.append(MethodNode(func_name, body))
+    statements[-1].eval(d)
 
 def handlePythonMethod(statements, root, body, fn):
-    # Note we will add root to parsedmethods after having parse
-    # 'this' file. This means we will not parse methods from
-    # bb classes twice
-    if not root  in __parsed_methods__:
-        text = '\n'.join(body)
-        bb.methodpool.insert_method( root, text, fn )
+    # AST handling
+    statements.append(PythonMethodNode(root, body, fn))
+    statements[-1].eval(None)
 
 def handleMethodFlags(statements, key, m, d):
     if bb.data.getVar(key, d):
