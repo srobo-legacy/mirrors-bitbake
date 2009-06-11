@@ -147,7 +147,7 @@ class BitBakeShellCommands:
         global last_exception
         globexpr = params[0]
         self._checkParsed()
-        names = globfilter( cooker.status.pkg_pn.keys(), globexpr )
+        names = globfilter( cooker.status.pkg_pn, globexpr )
         if len( names ) == 0: names = [ globexpr ]
         print "SHELL: Building %s" % ' '.join( names )
 
@@ -289,9 +289,7 @@ class BitBakeShellCommands:
     def help( self, params ):
         """Show a comprehensive list of commands and their purpose"""
         print "="*30, "Available Commands", "="*30
-        allcmds = cmds.keys()
-        allcmds.sort()
-        for cmd in allcmds:
+        for cmd in sorted(cmds):
             function,numparams,usage,helptext = cmds[cmd]
             print "| %s | %s" % (usage.ljust(30), helptext)
         print "="*78
@@ -317,10 +315,10 @@ class BitBakeShellCommands:
         what, globexpr = params
         if what == "files":
             self._checkParsed()
-            for key in globfilter( cooker.status.pkg_fn.keys(), globexpr ): print key
+            for key in globfilter( cooker.status.pkg_fn, globexpr ): print key
         elif what == "providers":
             self._checkParsed()
-            for key in globfilter( cooker.status.pkg_pn.keys(), globexpr ): print key
+            for key in globfilter( cooker.status.pkg_pn, globexpr ): print key
         else:
             print "Usage: match %s" % self.print_.usage
     match.usage = "<files|providers> <glob>"
@@ -468,10 +466,10 @@ SRC_URI = ""
         what = params[0]
         if what == "files":
             self._checkParsed()
-            for key in cooker.status.pkg_fn.keys(): print key
+            for key in cooker.status.pkg_fn: print key
         elif what == "providers":
             self._checkParsed()
-            for key in cooker.status.providers.keys(): print key
+            for key in cooker.status.providers: print key
         else:
             print "Usage: print %s" % self.print_.usage
     print_.usage = "<files|providers>"
@@ -566,7 +564,7 @@ def completeFilePath( bbfile ):
     """Get the complete bbfile path"""
     if not cooker.status: return bbfile
     if not cooker.status.pkg_fn: return bbfile
-    for key in cooker.status.pkg_fn.keys():
+    for key in cooker.status.pkg_fn:
         if key.endswith( bbfile ):
             return key
     return bbfile
@@ -610,7 +608,7 @@ def completer( text, state ):
                     allmatches = cooker.configuration.data.keys()
                 elif u == "<bbfile>":
                     if cooker.status.pkg_fn is None: allmatches = [ "(No Matches Available. Parsed yet?)" ]
-                    else: allmatches = [ x.split("/")[-1] for x in cooker.status.pkg_fn.keys() ]
+                    else: allmatches = [ x.split("/")[-1] for x in cooker.status.pkg_fn ]
                 elif u == "<providee>":
                     if cooker.status.pkg_fn is None: allmatches = [ "(No Matches Available. Parsed yet?)" ]
                     else: allmatches = cooker.status.providers.iterkeys()
