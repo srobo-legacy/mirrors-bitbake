@@ -23,49 +23,6 @@
 
 __version__ = "1.9.0"
 
-__all__ = [
-
-    "debug",
-    "note",
-    "error",
-    "fatal",
-
-    "mkdirhier",
-    "movefile",
-
-    "tokenize",
-    "evaluate",
-    "flatten",
-    "relparse",
-    "ververify",
-    "isjustname",
-    "isspecific",
-    "pkgsplit",
-    "catpkgsplit",
-    "vercmp",
-    "pkgcmp",
-    "dep_parenreduce",
-    "dep_opconvert",
-
-# fetch
-    "decodeurl",
-    "encodeurl",
-
-# modules
-    "parse",
-    "data",
-    "command",
-    "event",
-    "build",
-    "fetch",
-    "manifest",
-    "methodpool",
-    "cache",
-    "runqueue",
-    "taskdata",
-    "providers",
- ]
-
 import sys, os, types, re, string, bb
 
 if "BBDEBUG" in os.environ:
