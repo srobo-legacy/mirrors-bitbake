@@ -21,58 +21,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-__version__ = "1.8.13"
-
-__all__ = [
-
-    "debug",
-    "note",
-    "error",
-    "fatal",
-
-    "mkdirhier",
-    "movefile",
-
-    "tokenize",
-    "evaluate",
-    "flatten",
-    "relparse",
-    "ververify",
-    "isjustname",
-    "isspecific",
-    "pkgsplit",
-    "catpkgsplit",
-    "vercmp",
-    "pkgcmp",
-    "dep_parenreduce",
-    "dep_opconvert",
-
-# fetch
-    "decodeurl",
-    "encodeurl",
-
-# modules
-    "parse",
-    "data",
-    "event",
-    "build",
-    "fetch",
-    "manifest",
-    "methodpool",
-    "cache",
-    "runqueue",
-    "taskdata",
-    "providers",
- ]
-
-whitespace = '\t\n\x0b\x0c\r '
-lowercase = 'abcdefghijklmnopqrstuvwxyz'
+__version__ = "1.9.0"
 
 import sys, os, types, re, string, bb
-from bb import msg
-
-#projectdir = os.path.dirname(os.path.dirname(os.path.abspath(sys.argv[0])))
-projectdir = os.getcwd()
 
 if "BBDEBUG" in os.environ:
     level = int(os.environ["BBDEBUG"])
