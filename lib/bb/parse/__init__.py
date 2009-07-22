@@ -110,4 +110,4 @@ def vars_from_file(mypkg, d):
     parts.extend(tmplist)
     return parts
 
-from parse_py import __version__, ConfHandler, BBHandler
+from bb.parse.parse_py import __version__, ConfHandler, BBHandler
