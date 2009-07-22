@@ -28,6 +28,40 @@ BitBake build tools.
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 # Based on functions from the base bb module, Copyright 2003 Holger Schurig
 
+import ast
+
+def _compare_name(strparts, node):
+    if not strparts:
+        return True
+
+    current, rest = strparts[0], strparts[1:]
+    if isinstance(node, ast.Attribute):
+        if current == node.attr:
+            return _compare_name(rest, node.value)
+    elif isinstance(node, ast.Name):
+        if current == node.id:
+            return True
+    else:
+        return True
+    return False
+
+def compare_name(strval, node):
+    return _compare_name(tuple(reversed(strval.split("."))), node)
+
+class MyVisitor(ast.NodeVisitor):
+    def __init__(self, allowed):
+        self._allowed = allowed
+        self._names = tuple((name.split(".")[0] for name in self._allowed))
+
+    def visit_Name(self, node):
+        if node.id not in self._names:
+            raise Exception("%s access is not allowed" % node.id)
+
+    def visit_Attribute(self, node):
+        if not any((compare_name(name, node.value) for name in self._allowed)) and \
+           not any((compare_name(name, node) for name in self._allowed)):
+            raise Exception("%s access is not allowed" % ast.dump(node))
+
 import copy, os, re, sys, time, types
 import bb
 from bb   import utils, methodpool
@@ -67,6 +101,11 @@ class DataSmart:
             import bb
             code = match.group()[3:-1]
             locals()['d'] = self
+            allowednames = ("bb.which", "bb.data.getVar", "bb.data.expand", "bb.parse.vars_from_file",
+                            "bb.parse.BBHandler.vars_from_file", "d", "os.curdir", "os.path",
+                            "time.strftime", "time.gmtime", "os.uname", "str", "bool")
+            visitor = MyVisitor(allowednames)
+            visitor.visit(ast.parse(code))
             s = eval(code)
             if type(s) == types.IntType: s = str(s)
             return s
