@@ -26,21 +26,12 @@ import bb, re
 __word__ = re.compile(r"\S+")
 __parsed_methods__ = bb.methodpool.get_parsed_dict()
 
-class StatementGroup:
-    def __init__(self):
-        self.statements = []
-
-    def append(self, statement):
-        self.statements.append(statement)
-
+class StatementGroup(list):
     def eval(self, data):
         """
         Apply each statement on the data... in order
         """
-        map(lambda x: x.eval(data), self.statements)
-
-    def __getitem__(self, item):
-        return self.statements.__getitem__(item)
+        map(lambda x: x.eval(data), self)
 
 class IncludeNode:
     def __init__(self, what_file, fn, lineno):
