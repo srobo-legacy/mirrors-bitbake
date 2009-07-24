@@ -42,33 +42,6 @@ def init(data):
 def supports(fn, d):
     return fn[-5:] == ".conf"
 
-def include(oldfn, fn, data, error_out):
-    """
-
-    error_out If True a ParseError will be reaised if the to be included
-    """
-    if oldfn == fn: # prevent infinate recursion
-        return None
-
-    import bb
-    fn = bb.data.expand(fn, data)
-    oldfn = bb.data.expand(oldfn, data)
-
-    if not os.path.isabs(fn):
-        dname = os.path.dirname(oldfn)
-        bbpath = "%s:%s" % (dname, bb.data.getVar("BBPATH", data, 1))
-        abs_fn = bb.which(bbpath, fn)
-        if abs_fn:
-            fn = abs_fn
-
-    from bb.parse import handle
-    try:
-        ret = handle(fn, data, True)
-    except IOError:
-        if error_out:
-            raise ParseError("Could not %(error_out)s file %(fn)s" % vars() )
-        bb.msg.debug(2, bb.msg.domain.Parsing, "CONF file '%s' not found" % fn)
-
 def handle(fn, data, include):
     init(data)
 

@@ -29,7 +29,7 @@ import re, bb, os, sys, time
 import bb.fetch, bb.build, bb.utils
 from bb import data, fetch
 
-from ConfHandler import include, init
+from ConfHandler import init
 from bb.parse import ParseError, resolve_file, ast
 
 # For compatibility
@@ -60,22 +60,6 @@ IN_PYTHON_EOF = -9999999999999
 
 def supports(fn, d):
     return fn[-3:] == ".bb" or fn[-8:] == ".bbclass" or fn[-4:] == ".inc"
-
-def inherit(files, d):
-    __inherit_cache = data.getVar('__inherit_cache', d) or []
-    fn = ""
-    lineno = 0
-    files = data.expand(files, d)
-    for file in files:
-        if file[0] != "/" and file[-8:] != ".bbclass":
-            file = os.path.join('classes', '%s.bbclass' % file)
-
-        if not file in __inherit_cache:
-            bb.msg.debug(2, bb.msg.domain.Parsing, "BB %s:%d: inheriting %s" % (fn, lineno, file))
-            __inherit_cache.append( file )
-            data.setVar('__inherit_cache', __inherit_cache, d)
-            include(fn, file, d, "inherit")
-            __inherit_cache = data.getVar('__inherit_cache', d) or []
 
 def get_statements(filename, absolsute_filename, base_name):
     global cached_statements

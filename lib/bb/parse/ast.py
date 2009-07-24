@@ -21,7 +21,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import bb, re
+import bb, re, os
+from bb.parse import ParseError, resolve_file
 
 __word__ = re.compile(r"\S+")
 __parsed_methods__ = bb.methodpool.get_parsed_dict()
@@ -34,20 +35,27 @@ class StatementGroup(list):
         map(lambda x: x.eval(data), self)
 
 class IncludeNode:
-    def __init__(self, what_file, fn, lineno):
+    def __init__(self, what_file, fn, lineno, optional):
         self.what_file = what_file
         self.from_fn = fn
         self.from_lineno = lineno
+        self.optional = optional
 
     def eval(self, data):
         """
         Include the file and evaluate the statements
         """
         s = bb.data.expand(self.what_file, data)
-        bb.msg.debug(3, bb.msg.domain.Parsing, "CONF %s:%d: including %s" % (self.from_fn, self.from_lineno, s))
+        bb.msg.debug(3, bb.msg.domain.Parsing, "PARSE %s:%d: including %s" % (self.from_fn, self.from_lineno, s))
 
         # TODO: Cache those includes... maybe not here though
-        bb.parse.ConfHandler.include(self.from_fn, s, data, False)
+        try:
+            abs_fn = resolve_file(s, data)
+        except IOError, e:
+            if not self.optional:
+                raise ParseError("Required file %s not found." % s)
+        else:
+            bb.parse.handle(abs_fn, data, True)
 
 class ExportNode:
     def __init__(self, var):
@@ -237,10 +245,22 @@ class InheritNode:
         self.n = __word__.findall(files)
 
     def eval(self, data):
-        bb.parse.BBHandler.inherit(self.n, data)
- 
+        cache = bb.data.getVar('__inherit_cache', data) or []
+        for fn in self.n:
+            fn = bb.data.expand(fn, data)
+            try:
+                abs_fn = resolve_file(os.path.join("classes", "%s.bbclass" % fn), data)
+            except IOError, e:
+                raise ParseError("Unable to inherit %s: %s" % (fn, e))
+
+            if not abs_fn in cache:
+                bb.msg.debug(2, bb.msg.domain.Parsing, "BB inheriting %s" % fn)
+                bb.parse.handle(abs_fn, data, True)
+                cache.append(abs_fn)
+                bb.data.setVar("__inherit_cache", cache, data)
+
 def handleInclude(statements, m, fn, lineno, force):
-    statements.append(IncludeNode(m.group(1), fn, lineno))
+    statements.append(IncludeNode(m.group(1), fn, lineno, not force))
 
 def handleExport(statements, m):
     statements.append(ExportNode(m.group(1)))
