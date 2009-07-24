@@ -82,12 +82,14 @@ def init(fn, data):
 
 def resolve_file(fn, d):
     if not os.path.isabs(fn):
-        fn = bb.which(bb.data.getVar("BBPATH", d, 1), fn)
-        if not fn:
-            raise IOError("file %s not found" % fn)
+        abs_fn = bb.which(bb.data.getVar("BBPATH", d, 1), fn)
+        if not abs_fn:
+            raise IOError("File %s not found" % fn)
+    else:
+        abs_fn = fn
 
     bb.msg.debug(2, bb.msg.domain.Parsing, "LOAD %s" % fn)
-    return fn
+    return abs_fn
 
 # Used by OpenEmbedded metadata
 __pkgsplit_cache__={}
