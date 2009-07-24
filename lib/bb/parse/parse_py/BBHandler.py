@@ -30,7 +30,7 @@ import bb.fetch, bb.build, bb.utils
 from bb import data, fetch
 
 from ConfHandler import init
-from bb.parse import ParseError, resolve_file, ast
+from bb.parse import ParseError, ast
 
 # For compatibility
 from bb.parse import vars_from_file
@@ -93,11 +93,6 @@ def handle(fn, d, include):
     __residue__ = []
 
 
-    if include == 0:
-        bb.msg.debug(2, bb.msg.domain.Parsing, "BB " + fn + ": handle(data)")
-    else:
-        bb.msg.debug(2, bb.msg.domain.Parsing, "BB " + fn + ": handle(data, include)")
-
     (root, ext) = os.path.splitext(os.path.basename(fn))
     base_name = "%s%s" % (root,ext)
     init(d)
@@ -115,13 +110,11 @@ def handle(fn, d, include):
     else:
         oldfile = None
 
-    abs_fn = resolve_file(fn, d)
-
     if include:
-        bb.parse.mark_dependency(d, abs_fn)
+        bb.parse.mark_dependency(d, fn)
 
     # actual loading
-    statements = get_statements(fn, abs_fn, base_name)
+    statements = get_statements(fn, fn, base_name)
 
     # DONE WITH PARSING... time to evaluate
     if ext != ".bbclass":

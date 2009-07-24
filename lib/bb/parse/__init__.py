@@ -70,10 +70,18 @@ def supports(fn, data):
 
 def handle(fn, data, include = 0):
     """Call the handler that is appropriate for this file"""
+
+    try:
+        abs_fn = resolve_file(fn, data)
+    except IOError:
+        raise ParseError("File not found: %s " % fn)
+
     for h in handlers:
-        if h['supports'](fn, data):
-            return h['handle'](fn, data, include)
-    raise ParseError("%s is not a BitBake file" % fn)
+        if h['supports'](abs_fn, data):
+            bb.msg.debug(2, bb.msg.domain.Parsing, "Parsing %s" % abs_fn)
+            return h['handle'](abs_fn, data, include)
+
+    raise ParseError("%s is not a BitBake file" % abs_fn)
 
 def init(fn, data):
     for h in handlers:
@@ -87,8 +95,6 @@ def resolve_file(fn, d):
             raise IOError("File %s not found" % fn)
     else:
         abs_fn = fn
-
-    bb.msg.debug(2, bb.msg.domain.Parsing, "LOAD %s" % fn)
     return abs_fn
 
 # Used by OpenEmbedded metadata

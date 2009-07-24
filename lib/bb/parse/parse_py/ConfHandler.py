@@ -25,7 +25,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import re, bb.data, os, sys
-from bb.parse import ParseError, resolve_file, ast
+from bb.parse import ParseError, ast
 
 #__config_regexp__  = re.compile( r"(?P<exp>export\s*)?(?P<var>[a-zA-Z0-9\-_+.${}]+)\s*(?P<colon>:)?(?P<ques>\?)?=\s*(?P<apo>['\"]?)(?P<value>.*)(?P=apo)$")
 __config_regexp__  = re.compile( r"(?P<exp>export\s*)?(?P<var>[a-zA-Z0-9\-_+.${}/]+)(\[(?P<flag>[a-zA-Z0-9\-_+.]+)\])?\s*((?P<colon>:=)|(?P<ques>\?=)|(?P<append>\+=)|(?P<prepend>=\+)|(?P<predot>=\.)|(?P<postdot>\.=)|=)\s*(?P<apo>['\"]?)(?P<value>.*)(?P=apo)$")
@@ -50,11 +50,10 @@ def handle(fn, data, include):
     else:
         oldfile = bb.data.getVar('FILE', data)
 
-    abs_fn = resolve_file(fn, data)
-    f = open(abs_fn, 'r')
+    f = open(fn, 'r')
 
     if include:
-        bb.parse.mark_dependency(data, abs_fn)
+        bb.parse.mark_dependency(data, fn)
 
     statements = ast.StatementGroup()
     lineno = 0
