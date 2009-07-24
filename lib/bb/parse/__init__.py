@@ -79,7 +79,13 @@ def handle(fn, data, include = 0):
     for h in handlers:
         if h['supports'](abs_fn, data):
             bb.msg.debug(2, bb.msg.domain.Parsing, "Parsing %s" % abs_fn)
-            return h['handle'](abs_fn, data, include)
+
+            # Prepend recipe directory to BBPATH temporarily
+            bbpath = bb.data.getVar("BBPATH", data)
+            bb.data.setVar("BBPATH", "%s:%s" % (os.path.dirname(abs_fn), bbpath), data)
+            data = h['handle'](abs_fn, data, include)
+            bb.data.setVar("BBPATH", bbpath, data)
+            return data
 
     raise ParseError("%s is not a BitBake file" % abs_fn)
 
