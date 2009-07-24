@@ -152,14 +152,14 @@ def handle(fn, d, include):
             multi = data.getVar('BBCLASSEXTEND', d, 1)
             if multi:
                 based = bb.data.createCopy(d)
-                finalise(fn, based)
+                ast.finalise(fn, based)
                 darray = {"": based}
                 for cls in multi.split():
                     pn = data.getVar('PN', d, True)
                     based = bb.data.createCopy(d)
                     data.setVar('PN', pn + '-' + cls, based)
-                    inherit([cls], based)
-                    finalise(fn, based)
+                    ast.InheritNode(cls).eval(based)
+                    ast.finalise(fn, based)
                     darray[cls] = based
                 return darray
             else:
